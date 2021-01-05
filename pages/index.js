@@ -41,6 +41,10 @@ export default function Home() {
 			})
 	}, [])
 
+	const buyNewShare = () => {
+		fetch(proc)
+	}
+
 	return (
 		<div>
 			<Head>
@@ -57,10 +61,11 @@ export default function Home() {
 						Just buy whole shares for now
 					</h2>
 					<div className='flex items-center justify-between my-5'>
-						<form className='w-full border border-green-600 rounded-md shadow-lg p-5'>
+						<form className='w-full border-2 border-green-600 rounded-md shadow-lg p-5'>
 							<div className='flex flex-col my-5'>
 								<label className=' text-sm font-medium text-gray-700'>
-									Please select the symbol you want to purchase
+									Please select the <span className='font-bold'>symbol</span>{' '}
+									you want to purchase
 								</label>
 								<select className='rounded-md shadow-sm py-5 px-3'>
 									{availableShares.splice(0, 10).map((share) => {
@@ -75,7 +80,8 @@ export default function Home() {
 
 							<div className='flex flex-col my-5'>
 								<label className=' text-sm font-medium text-gray-700'>
-									Please select number of shares you want to purchase
+									Please select <span className='font-bold'>number</span> of
+									shares you want to purchase
 								</label>
 								<input
 									className='rounded-md shadow-sm  py-5 px-3'
