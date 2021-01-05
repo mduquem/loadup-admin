@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react'
 import Head from 'next/head'
+import buy from './api/buy'
 
 export default function Home() {
 	const [availableShares, setAvailableShares] = useState([])
+	const [selectedSymbol, setSelectedSymbol] = useState('')
+	const [selectedSymbolLastPrice, setSelectedSymbolLastPrice] = useState(0)
+
+	const [numberOfShares, setNumberOfShares] = useState(0)
+	const [totalAmount, setTotalAmount] = useState(0)
 	const [page, setPage] = useState(1)
 
 	useEffect(() => {
@@ -20,8 +26,6 @@ export default function Home() {
 				return response.json()
 			})
 			.then((data) => {
-				console.log(data[0])
-
 				const tradableShares = []
 				data.map((share) => {
 					if (
@@ -32,17 +36,74 @@ export default function Home() {
 						tradableShares.push(share)
 					}
 				})
-				console.log('tradables', tradableShares)
 
-				setAvailableShares(tradableShares)
+				setAvailableShares(tradableShares.splice(0, 10))
+				setSelectedSymbol(tradableShares[0].id)
 			})
 			.catch((error) => {
 				console.error(error)
 			})
 	}, [])
 
-	const buyNewShare = () => {
-		fetch(proc)
+	const buyNewShare = (event) => {
+		event.preventDefault()
+		const symbol =
+			availableShares.find((share) => share.id === selectedSymbol) || 'AAPL'
+		if (
+			selectedSymbol === '' ||
+			numberOfShares === 0 ||
+			selectedSymbolLastPrice === 0
+		) {
+			alert('Unable to buy. Missing parameters')
+		}
+		fetch(process.env.MAIN_LOADUP_URL + '/api/buy', {
+			method: 'POST',
+			body: JSON.stringify({
+				symbol: symbol.symbol,
+				qty: numberOfShares,
+				side: 'buy',
+				type: 'market',
+				time_in_force: 'day'
+			})
+		})
+			.then((response) => {
+				return response.json()
+			})
+			.then((data) => {})
+			.catch((error) => {
+				console.error(error)
+			})
+	}
+
+	const changeSelectedSymbol = (event) => {
+		setSelectedSymbol(event.target.value)
+		fetchSymbolLastPrice(selectedSymbol)
+	}
+
+	const fetchSymbolLastPrice = () => {
+		const symbol =
+			availableShares.find((share) => share.id === selectedSymbol) || 'AAPL'
+
+		fetch(
+			process.env.MARKET_DATA_URL + '/v1/last/stocks/' + String(symbol.symbol),
+			{
+				method: 'GET',
+				headers: {
+					'APCA-API-KEY-ID': process.env.APCA_API_KEY,
+					'APCA-API-SECRET-KEY': process.env.APCA_API_SECRET_KEY
+				}
+			}
+		)
+			.then((response) => {
+				return response.json()
+			})
+			.then((data) => {
+				setSelectedSymbolLastPrice(data.last.price)
+				setTotalAmount(numberOfShares * selectedSymbolLastPrice)
+			})
+			.catch((error) => {
+				console.error('errorrrrrr inside fetch', error)
+			})
 	}
 
 	return (
@@ -67,10 +128,14 @@ export default function Home() {
 									Please select the <span className='font-bold'>symbol</span>{' '}
 									you want to purchase
 								</label>
-								<select className='rounded-md shadow-sm py-5 px-3'>
-									{availableShares.splice(0, 10).map((share) => {
+								<select
+									onChange={changeSelectedSymbol}
+									value={selectedSymbol}
+									className='rounded-md shadow-sm py-5 px-3'
+								>
+									{availableShares.map((share) => {
 										return (
-											<option value={share.id}>
+											<option key={share.id} value={share.id}>
 												{share.symbol} - {share.name}
 											</option>
 										)
@@ -87,11 +152,34 @@ export default function Home() {
 									className='rounded-md shadow-sm  py-5 px-3'
 									type='number'
 									placeholder='e.g. 5 shares of AAPL'
+									onChange={(event) => {
+										setNumberOfShares(event.target.value)
+									}}
 								/>
 							</div>
-							<button className='bg-green-600 text-white active:bg-green-700 font-bold uppercase text-base px-8 py-3 rounded-full shadow-md hover:shadow-lg outline-none focus:outline-none mr-1 mb-1'>
-								Buy
-							</button>
+							<div className='flex justify-between'>
+								<button
+									onClick={buyNewShare}
+									className='bg-green-600 text-white active:bg-green-700 font-bold uppercase text-base px-8 py-3 rounded-full shadow-md hover:shadow-lg outline-none focus:outline-none mr-1 mb-1'
+								>
+									Buy
+								</button>
+								<div>
+									{availableShares.map((share) => {
+										if (share.id === selectedSymbol) {
+											return <h3>{share.name}</h3>
+										} else {
+											return null
+										}
+									})}
+									{totalAmount !== 0 ? (
+										<p>
+											<span className='font-bold'>for</span> $
+											{new Intl.NumberFormat().format(totalAmount)}
+										</p>
+									) : null}
+								</div>
+							</div>
 						</form>
 					</div>
 				</div>

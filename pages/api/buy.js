@@ -1,17 +1,21 @@
-export default async (req, res) => {
-	const buyData = JSON.stringify(req.body)
-
+const buy = async (req, res) => {
+	const buyData = req.body
 	try {
 		const response = await fetch(process.env.BASE_URL + '/v2/orders', {
 			method: 'POST',
-			body: buyData
+			body: buyData,
+			headers: {
+				'APCA-API-KEY-ID': process.env.APCA_API_KEY,
+				'APCA-API-SECRET-KEY': process.env.APCA_API_SECRET_KEY
+			}
 		})
-		await response.json()
+		const data = await response.json()
+
 		res.statusCode = 200
 		res.send({
 			success: true,
 			message: 'Successfully bought',
-			response
+			data
 		})
 	} catch (error) {
 		res.statusCode = 500
@@ -22,3 +26,4 @@ export default async (req, res) => {
 		})
 	}
 }
+export default buy
